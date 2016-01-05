@@ -39,7 +39,7 @@ class fear(object):
         Connect to fear and store connection object
         '''
         if not self.via_gate:
-            self._connection = pysftp.Connection('fear', private_key=LOCAL_TO_REMOTE_KEY_FILE)
+            self._connection = pysftp.Connection('perlis', private_key=LOCAL_TO_REMOTE_KEY_FILE)
         else:
             #### FIXME - Currently assumes that necessary port forwarding already in place
             self._connection = pysftp.Connection('localhost', port=HOME_TO_REMOTE_PORT, username=USERNAME, private_key=HOME_TO_REMOTE_KEY_FILE)
@@ -129,7 +129,7 @@ class fear(object):
         if True:#not self.via_gate:
             #### FIXME - This is inefficient - but paramiko's SFTPClient.get operation sometimes hangs bringing down all of python
             if not via_gate:
-                cmd = 'scp -i %(rsa_key)s %(username)s@fear:%(remotepath)s %(localpath)s' % {'rsa_key' : LOCAL_TO_REMOTE_KEY_FILE,
+                cmd = 'scp -i %(rsa_key)s %(username)s@perlis:%(remotepath)s %(localpath)s' % {'rsa_key' : LOCAL_TO_REMOTE_KEY_FILE,
                                                                                              'username' : USERNAME,
                                                                                              'remotepath' : remotepath,
                                                                                              'localpath' : localpath}
@@ -178,10 +178,10 @@ class fear(object):
         Submit a job onto the stack.
         Currently runs jobs from the same folder as they are saved in.
         '''
-        fear_string = ' '.join(['. /usr/local/grid/divf2/common/settings.sh;',
+        fear_string = ' '.join(['. /home/sgeadmin/gridengine/default/common/settings.sh;',
                                 'cd %s;' % os.path.split(shell_file)[0],
                                 'chmod +x %s;' % os.path.split(shell_file)[-1],
-                                'qsub -l lr=0',
+                                'qsub',
                                 os.path.split(shell_file)[-1] + ';',
                                 'cd ..'])
     
@@ -200,9 +200,9 @@ class fear(object):
         Warning : assume that all jobs are in the same folder
         '''
         #### TODO - correctly handle case when jobs not in same folder
-        fear_string = '. /usr/local/grid/divf2/common/settings.sh; cd %s; ' % os.path.split(shell_files[0])[0]
+        fear_string = '. /home/sgeadmin/gridengine/default/common/settings.sh; cd %s; ' % os.path.split(shell_files[0])[0]
         fear_string += '; '.join([' '.join(['chmod +x %s;' % os.path.split(shell_file)[-1],
-                                            'qsub -l lr=0',
+                                            'qsub',
                                             os.path.split(shell_file)[-1]])
                                   for shell_file in shell_files if not shell_file is None])  
         fear_string += '; cd ..'
@@ -215,17 +215,17 @@ class fear(object):
         return [output_text[i].split(' ')[2] for i in range(len(shell_files)) if not shell_files[i] is None]
     
     def qdel(self, job_id):
-        output = self.command('. /usr/local/grid/divf2/common/settings.sh; qdel %s' % job_id)
+        output = self.command('. /home/sgeadmin/gridengine/default/common/settings.sh; qdel %s' % job_id)
         return output
     
     def qdel_all(self):
-        output = self.command('. /usr/local/grid/divf2/common/settings.sh; qdel -u %s' % USERNAME)
+        output = self.command('. /home/sgeadmin/gridengine/default/common/settings.sh; qdel -u %s' % USERNAME)
         return output
     
     def qstat(self):
         '''Updates a dictionary with (job id, status) pairs'''
         # Parse xml response from qstat
-        queue_list = ET.fromstring(''.join(self.command('. /usr/local/grid/divf2/common/settings.sh; qstat -u %s -xml' % USERNAME)))
+        queue_list = ET.fromstring(''.join(self.command('. /home/sgeadmin/gridengine/default/common/settings.sh; qstat -u %s -xml' % USERNAME)))
         # Clear old status dictionary
         self.status = {}
         # Iterate over jobs within multiple queue lists
@@ -252,7 +252,7 @@ class fear(object):
 
     def qstat_xml(self):
         '''Returns xml output of qstat'''
-        return ET.fromstring(''.join(self.command(". /usr/local/grid/divf2/common/settings.sh; qstat -u '*' -xml")))
+        return ET.fromstring(''.join(self.command(". /home/sgeadmin/gridengine/default/common/settings.sh; qstat -u '*' -xml")))
     
     def job_terminated(self, job_id, update=False):
         '''Returns true if job not listed by qstat'''

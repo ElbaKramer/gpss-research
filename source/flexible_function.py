@@ -639,7 +639,7 @@ class GPModel:
     """Model class - keeps track of a mean function, kernel, likelihood function,
        and optionally a score."""
 
-    def __init__(self, mean=None, kernel=None, likelihood=None, nll=None, ndata=None):
+    def __init__(self, mean=None, kernel=None, likelihood=None, nll=None, ndata=None, normal=None):
         assert isinstance(mean, MeanFunction) or (mean is None)
         assert isinstance(kernel, Kernel) or (kernel is None)
         assert isinstance(likelihood, Likelihood) or (likelihood is None)
@@ -648,6 +648,7 @@ class GPModel:
         self.likelihood = likelihood
         self.nll = nll
         self.ndata = ndata
+        self.normal = normal
             
     def __hash__(self): return hash(self.__repr__())
 
@@ -666,7 +667,7 @@ class GPModel:
         m = self.mean.copy() if not self.mean is None else None
         k = self.kernel.copy() if not self.kernel is None else None
         l = self.likelihood.copy() if not self.likelihood is None else None
-        return GPModel(mean=m, kernel=k, likelihood=l, nll=self.nll, ndata=self.ndata)
+        return GPModel(mean=m, kernel=k, likelihood=l, nll=self.nll, ndata=self.ndata, normal=self.normal)
 
     def pretty_print(self):
         return 'GPModel(mean=%s, kernel=%s, likelihood=%s)' % \
@@ -706,7 +707,8 @@ class GPModel:
         model.mean.load_param_vector(output.mean_hypers)
         model.kernel.load_param_vector(output.kernel_hypers)
         model.likelihood.load_param_vector(output.lik_hypers)
-        return GPModel(mean=model.mean, kernel=model.kernel, likelihood=model.likelihood, nll=output.nll, ndata=ndata) 
+        model.normal = output.norm_hypers
+        return GPModel(mean=model.mean, kernel=model.kernel, likelihood=model.likelihood, nll=output.nll, ndata=ndata, normal=normal) 
 
     def simplified(self):
         simple = self.copy()

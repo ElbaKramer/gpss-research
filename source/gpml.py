@@ -77,45 +77,83 @@ OPTIMIZE_KERNEL_CODE = r"""
 rand('twister', %(seed)s);
 randn('state', %(seed)s);
 
-a='Load the data, it should contain X and y.'
-load '%(datafile)s'
-X = double(X)
-y = double(y)
+a='Load the data, it should contain X and y.';
+load '%(datafile)s';
+
+if ~%(relational)
+    X = double(X);
+    y = double(y);
+else
+    ndset = numel(X)
+    for i=1:ndataset
+        X{i] = double(X{i})
+        y{i} = double(y{i})
+    end
+end
 
 X_full = X;
 y_full = y;
 
-if %(subset)s & (%(subset_size)s < size(X, 1))
-    subset = randsample(size(X, 1), %(subset_size)s, false)
-    X = X_full(subset,:);
-    y = y_full(subset);
+if %(subset)s
+    if ~%(relational)
+        if %(subset_size)s < size(X, 1)
+            subset = randsample(size(X, 1), %(subset_size)s, false);
+            X = X_full(subset,:);
+            y = y_full(subset);
+        end
+    else
+        for i=1:ndataset
+            if %(subset_size)s < size(X{i}, 1)
+                subset = randsample(size(X{i}, 1), %(subset_size)s, false);
+                X{i} = X_full{i}(subset,:);
+                y{i} = y_full{i}(subset);
+            end
+        end
+    end
 end
 
 %% Load GPML
 addpath(genpath('%(gpml_path)s'));
 
-%% Set up model.
-meanfunc = %(mean_syntax)s
-hyp.mean = %(mean_params)s
+%% Set up model
+meanfunc = %(mean_syntax)s;
+hyp.mean = %(mean_params)s;
 
-covfunc = %(kernel_syntax)s
-hyp.cov = %(kernel_params)s
+covfunc = %(kernel_syntax)s;
+hyp.cov = %(kernel_params)s;
 
-likfunc = %(lik_syntax)s
-hyp.lik = %(lik_params)s
+likfunc = %(lik_syntax)s;
+hyp.lik = %(lik_params)s;
 
-inference = %(inference)s
+if %(relational)
+    sfm = zeros(1,ndataset);
+    sfa = zeros(1,ndataset);
+    for i=1:ndataset
+        sfm(i) = log(std(y{i}));
+        sfa(i) = log(mean(y{i}));
+    end
+    sfs = vertcat(sfm, sfa);
+    hyp.norm = sfs(:);
+end
+
+inference = %(inference)s;
+
+if ~%(relational)
+    gpfunc = 'gp_delta';
+else
+    gpfunc = 'gp_rel_v2'
+end
 
 %% Optimise on subset
-[hyp_opt, nlls] = minimize(hyp, @gp, -int32(%(iters)s * 3 / 3), inference, meanfunc, covfunc, likfunc, X, y);
+[hyp_opt, nlls] = minimize(hyp, gpfunc, -%(iters)s, inference, meanfunc, covfunc, likfunc, X, y);
 
 %% Optimise on full data
 if %(full_iters)s > 0
-    hyp_opt = minimize(hyp_opt, @gp, -%(full_iters)s, inference, meanfunc, covfunc, likfunc, X_full, y_full);
+    hyp_opt = minimize(hyp_opt, gpfunc, -%(full_iters)s, inference, meanfunc, covfunc, likfunc, X_full, y_full);
 end
 
 %% Evaluate the nll on the full data
-best_nll = gp(hyp_opt, inference, meanfunc, covfunc, likfunc, X_full, y_full)
+best_nll = feval(gpfunc, hyp_opt, inference, meanfunc, covfunc, likfunc, X_full, y_full);
 
 save( '%(writefile)s', 'hyp_opt', 'best_nll', 'nlls');
 %% exit();
@@ -379,6 +417,8 @@ def load_mat(data_file, y_dim=0):
     #### TODO - this should return a dictionary, not a tuple
     if 'Xtest' in data:
         return data['X'], data['y'][:,y_dim], np.shape(data['X'])[1], data['Xtest'], data['ytest'][:,y_dim]
-    else:
+    else if not relational:
         return data['X'], data['y'][:,y_dim], np.shape(data['X'])[1]
+    else:
+        return data['X'][0], data['y'][0][:,y_dim], np.shape(data['X'][0][0])[1]
 

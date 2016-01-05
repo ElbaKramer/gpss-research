@@ -38,12 +38,16 @@ import re
 import shutil
 import random
 
-def evaluate_models(models, X, y, verbose=True, iters=300, local_computation=False, zip_files=False, max_jobs=500, random_seed=0, subset=False, subset_size=250, full_iters=0, bundle_size=1):
+def evaluate_models(models, X, y, verbose=True, iters=300, local_computation=False, zip_files=False, max_jobs=500, random_seed=0, subset=False, subset_size=250, full_iters=0, bundle_size=1, relational=False):
    
     # Make data into matrices in case they're unidimensional.
-    if X.ndim == 1: X = X[:, nax]
-    if y.ndim == 1: y = y[:, nax]
-    ndata = y.shape[0]
+    if not relational:
+        if X.ndim == 1: X = X[:, nax]
+        if y.ndim == 1: y = y[:, nax]
+        ndata = y.shape[0]
+    else:
+        yy = np.concatenate(tuple(y[i] for i in np.size(y)), axis=0)
+        ndata = yy.shape[0]
     
     # Create data file
     if verbose:
@@ -77,7 +81,8 @@ def evaluate_models(models, X, y, verbose=True, iters=300, local_computation=Fal
                       'seed': str(np.random.randint(2**31)),
                       'subset': 'true' if subset else 'false',
                       'subset_size' : str(subset_size),
-                      'full_iters' : str(full_iters)}
+                      'full_iters' : str(full_iters),
+                      'relational' : 'true' if relational else 'false'}
 
         scripts[i] = gpml.OPTIMIZE_KERNEL_CODE % parameters
         #### Need to be careful with % signs
