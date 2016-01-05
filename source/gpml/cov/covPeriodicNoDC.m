@@ -12,9 +12,11 @@ function K = covPeriodicNoDC(hyp, x, z, i)
 %         log(p)
 %         log(sf) ]
 %
-% Copyright (c) by James Robert Lloyd and Hannes Nickisch 2013-10-14.
+% Note that covPeriodicNoDC converges to covCos as ell goes to infinity.
 %
-% See also COVFUNCTIONS.M.
+% Copyright (c) by James Robert Lloyd and Hannes Nickisch 2013-10-21.
+%
+% See also COVFUNCTIONS.M, COVCOS.M.
 
 if nargin<2, K = '3'; return; end                  % report number of parameters
 if nargin<3, z = []; end                                   % make sure, z exists
