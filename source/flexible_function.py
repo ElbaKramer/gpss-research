@@ -639,23 +639,23 @@ class GPModel:
     """Model class - keeps track of a mean function, kernel, likelihood function,
        and optionally a score."""
 
-    def __init__(self, mean=None, kernel=None, likelihood=None, nll=None, ndata=None, normal=None):
+    def __init__(self, mean=None, kernel=None, likelihood=None, normal=None, nll=None, ndata=None):
         assert isinstance(mean, MeanFunction) or (mean is None)
         assert isinstance(kernel, Kernel) or (kernel is None)
         assert isinstance(likelihood, Likelihood) or (likelihood is None)
         self.mean = mean
         self.kernel = kernel
         self.likelihood = likelihood
+        self.normal = normal
         self.nll = nll
         self.ndata = ndata
-        self.normal = normal
             
     def __hash__(self): return hash(self.__repr__())
 
     def __repr__(self):
         # Remember all the various scoring criteria
-        return 'GPModel(mean=%s, kernel=%s, likelihood=%s, nll=%s, ndata=%s)' % \
-               (self.mean.__repr__(), self.kernel.__repr__(), self.likelihood.__repr__(), self.nll, self.ndata)
+        return 'GPModel(mean=%s, kernel=%s, likelihood=%s, normal=%s, nll=%s, ndata=%s)' % \
+               (self.mean.__repr__(), self.kernel.__repr__(), self.likelihood.__repr__(), self.normal.__repr__(), self.nll, self.ndata)
 
     def __cmp__(self, other):
         if cmp(self.__class__, other.__class__):
@@ -667,7 +667,7 @@ class GPModel:
         m = self.mean.copy() if not self.mean is None else None
         k = self.kernel.copy() if not self.kernel is None else None
         l = self.likelihood.copy() if not self.likelihood is None else None
-        return GPModel(mean=m, kernel=k, likelihood=l, nll=self.nll, ndata=self.ndata, normal=self.normal)
+        return GPModel(mean=m, kernel=k, likelihood=l, normal=self.normal, nll=self.nll, ndata=self.ndata)
 
     def pretty_print(self):
         return 'GPModel(mean=%s, kernel=%s, likelihood=%s)' % \
@@ -699,16 +699,15 @@ class GPModel:
                 }[criterion.lower()]
                 
     @staticmethod
-    def from_printed_outputs(nll=None, ndata=None, noise=None, mean=None, kernel=None, likelihood=None):
-        return GPModel(mean=mean, kernel=kernel, likelihood=likelihood, nll=nll, ndata=ndata)
+    def from_printed_outputs(nll=None, ndata=None, noise=None, mean=None, kernel=None, likelihood=None, normal=None):
+        return GPModel(mean=mean, kernel=kernel, likelihood=likelihood, normal=normal, nll=nll, ndata=ndata)
 
     @staticmethod 
     def from_matlab_output(output, model, ndata):
         model.mean.load_param_vector(output.mean_hypers)
         model.kernel.load_param_vector(output.kernel_hypers)
         model.likelihood.load_param_vector(output.lik_hypers)
-        model.normal = output.norm_hypers
-        return GPModel(mean=model.mean, kernel=model.kernel, likelihood=model.likelihood, nll=output.nll, ndata=ndata, normal=normal) 
+        return GPModel(mean=model.mean, kernel=model.kernel, likelihood=model.likelihood, normal=output.norm_hypers, nll=output.nll, ndata=ndata) 
 
     def simplified(self):
         simple = self.copy()
@@ -2250,3 +2249,4 @@ def add_jitter(models, sd=0.1):
 #     def out_of_bounds(self, constraints):
 #         return (self.period < constraints['min_period']) or \
 #                (self.period > np.log(0.5*(constraints['input_max'] - constraints['input_min']))) # Need to observe more than 2 periods to declare periodicity
+

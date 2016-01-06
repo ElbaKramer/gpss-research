@@ -80,13 +80,13 @@ randn('state', %(seed)s);
 a='Load the data, it should contain X and y.';
 load '%(datafile)s';
 
-if ~%(relational)
+if ~%(relational)s
     X = double(X);
     y = double(y);
 else
-    ndset = numel(X)
+    ndataset = numel(X)
     for i=1:ndataset
-        X{i] = double(X{i})
+        X{i} = double(X{i})
         y{i} = double(y{i})
     end
 end
@@ -95,7 +95,7 @@ X_full = X;
 y_full = y;
 
 if %(subset)s
-    if ~%(relational)
+    if ~%(relational)s
         if %(subset_size)s < size(X, 1)
             subset = randsample(size(X, 1), %(subset_size)s, false);
             X = X_full(subset,:);
@@ -125,20 +125,22 @@ hyp.cov = %(kernel_params)s;
 likfunc = %(lik_syntax)s;
 hyp.lik = %(lik_params)s;
 
-if %(relational)
-    sfm = zeros(1,ndataset);
-    sfa = zeros(1,ndataset);
+if %(relational)s
+    sfs = zeros(1,ndataset);
+    sfp = zeros(1,ndataset);
     for i=1:ndataset
-        sfm(i) = log(std(y{i}));
-        sfa(i) = log(mean(y{i}));
+        sfs(i) = log(mean(y{i}));
+        sfp(i) = log(std(y{i}));
     end
-    sfs = vertcat(sfm, sfa);
-    hyp.norm = sfs(:);
+    sfn = vertcat(sfs, sfp);
+    hyp.norm = sfn(:);
+else
+    hyp.norm = [];
 end
 
 inference = %(inference)s;
 
-if ~%(relational)
+if ~%(relational)s
     gpfunc = 'gp_delta';
 else
     gpfunc = 'gp_rel_v2'
@@ -160,10 +162,11 @@ save( '%(writefile)s', 'hyp_opt', 'best_nll', 'nlls');
 """
 
 class OptimizerOutput:
-    def __init__(self, mean_hypers, kernel_hypers, lik_hypers, nll, nlls):
+    def __init__(self, mean_hypers, kernel_hypers, lik_hypers, norm_hypers, nll, nlls):
         self.mean_hypers = mean_hypers
         self.kernel_hypers = kernel_hypers
         self.lik_hypers = lik_hypers
+        self.norm_hypers = norm_hypers
         self.nll = nll
         self.nlls = nlls
 
@@ -176,8 +179,9 @@ def read_outputs(write_file):
     mean_hypers = optimized_hypers['mean'][0, 0].ravel()
     kernel_hypers = optimized_hypers['cov'][0, 0].ravel()
     lik_hypers = optimized_hypers['lik'][0, 0].ravel()
+    norm_hypers = optimized_hypers['norm'][0, 0].ravel()
     
-    return OptimizerOutput(mean_hypers, kernel_hypers, lik_hypers, nll, nlls)
+    return OptimizerOutput(mean_hypers, kernel_hypers, lik_hypers, norm_hypers, nll, nlls)
 
 # Matlab code to make predictions on a dataset.
 PREDICT_AND_SAVE_CODE = r"""
@@ -414,11 +418,15 @@ def load_mat(data_file, y_dim=0):
     '''
      
     data = scipy.io.loadmat(data_file)
+
+    #### TODO - the following relational branch is nor perfect
+    relational = data['X'].dtype == object
+    if relational:
+        return data['X'][0], data['y'][0], 1
+
     #### TODO - this should return a dictionary, not a tuple
     if 'Xtest' in data:
         return data['X'], data['y'][:,y_dim], np.shape(data['X'])[1], data['Xtest'], data['ytest'][:,y_dim]
-    else if not relational:
-        return data['X'], data['y'][:,y_dim], np.shape(data['X'])[1]
     else:
-        return data['X'][0], data['y'][0][:,y_dim], np.shape(data['X'][0][0])[1]
+        return data['X'], data['y'][:,y_dim], np.shape(data['X'])[1]
 

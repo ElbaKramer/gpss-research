@@ -117,14 +117,14 @@ try                                                  % call the inference method
 %       post = feval(inf{:}, hyp, mean, cov, lik, x, y);
 %     end
   else
-    cov_norm = {@covProd, {@covConst, {@covSum, {@covConst, cov}}}};
+    cov_norm = {@covSum, {@covConst, {@covProd, {@covConst, cov}}}};
     hyp_norm = rmfield(hyp, 'norm');
     hyp_struct = hyp_norm;
     nlZs = zeros(numel(y),1);
     if nargout<=1
       for i=1:numel(y)
         idx_norm = (1:2) + 2*(i-1);
-        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov);
+        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov(:));
         [post, nlZs(i)] = feval(inf{:}, hyp_norm, mean, cov_norm, lik, x{i}, y{i});              
       end
       nlZ = sum(nlZs);
@@ -133,10 +133,8 @@ try                                                  % call the inference method
       dnlZs = cell(numel(y),1);
       for i=1:numel(y)
         idx_norm = (1:2) + 2*(i-1);
-        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov);
+        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov(:));
         [post, nlZs(i), dnlZs{i}] = feval(inf{:}, hyp_norm, mean, cov_norm, lik, x{i}, y{i});
-%         dnlZs_norm{i} = dnlZs{i}.cov(1:2)
-%         dnlZs_cov{i} = dnlZs{i}.cov(3:end)
       end
       nlZ = sum(nlZs);
       for i=1:numel(dnlZs)

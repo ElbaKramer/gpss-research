@@ -32,7 +32,7 @@ def remove_nan_scored_models(scored_kernels, score):
     eq_nan = [k for k in scored_kernels if np.isnan(ff.GPModel.score(k, criterion=score))] 
     return (not_nan, eq_nan)
 
-def calc_data_shape(X, y)
+def calc_data_shape(X, y, exp):
     # Create location, scale and minimum period parameters to pass around for initialisations
 
     data_shape = {}
@@ -61,12 +61,12 @@ def calc_data_shape(X, y)
         data_shape['min_period'] = np.log([max(exp.period_heuristic * utils.misc.min_abs_diff(X[:,i]), exp.period_heuristic * np.ptp(X[:,i]) / X.shape[0]) for i in range(X.shape[1])])
 
     data_shape['max_period'] = [np.log((1.0/exp.max_period_heuristic)*(data_shape['x_max'][i] - data_shape['x_min'][i])) for i in range(X.shape[1])]
-    
+
     return data_shape
-    
+
 def perform_kernel_search(X, y, D, experiment_data_file_name, results_filename, exp):
     '''Search for the best kernel, in parallel on fear or local machine.'''
-    
+
     # Initialise random seeds - randomness may be used in e.g. data subsetting
 
     utils.misc.set_all_random_seeds(exp.random_seed)
@@ -78,12 +78,12 @@ def perform_kernel_search(X, y, D, experiment_data_file_name, results_filename, 
     l = eval(exp.lik)
 
     if not exp.relational:
-        data_shape = calc_data_shape(X, y)
+        data_shape = calc_data_shape(X, y, exp)
         current_models = [ff.GPModel(mean=m, kernel=k, likelihood=l, ndata=y.size)]
-    else
+    else:
         XX = np.concatenate(tuple(X[i] for i in range(np.size(X))), axis=0)
         yy = np.concatenate(tuple(y[i] for i in range(np.size(y))), axis=0)
-        data_shape = calc_data_shape(XX, yy)
+        data_shape = calc_data_shape(XX, yy, exp)
         current_models = [ff.GPModel(mean=m, kernel=k, likelihood=l, ndata=yy.size)]
 
     print '\n\nStarting search with this model:\n'
@@ -162,7 +162,7 @@ def perform_kernel_search(X, y, D, experiment_data_file_name, results_filename, 
             print '\nKernels to be evaluated\n'
             for model in current_models:
                 print model.pretty_print()
-        
+
         # Optimise parameters of and score the kernels
         new_results = jc.evaluate_models(current_models, X, y, verbose=exp.verbose, local_computation=exp.local_computation,
                                           zip_files=True, max_jobs=exp.max_jobs, iters=exp.iters, random_seed=exp.random_seed,
@@ -356,7 +356,7 @@ class Experiment(namedtuple("Experiment", 'description, data_dir, max_depth, ran
                 period_heuristic_type='both',
                 stopping_criteria=[],
                 improvement_tolerance=0.1,
-                relational=False):               
+                relational=False):
         return super(Experiment, cls).__new__(cls, description, data_dir, max_depth, random_order, k, debug, local_computation, \
                                               n_rand, sd, jitter_sd, max_jobs, verbose, make_predictions, skip_complete, results_dir, \
                                               iters, base_kernels, additive_form, mean, kernel, lik, verbose_results, \
