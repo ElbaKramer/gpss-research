@@ -121,38 +121,36 @@ try                                                  % call the inference method
     hyp_norm = rmfield(hyp, 'norm');
     hyp_struct = hyp_norm;
     nlZs = zeros(numel(y),1);
-    if nargout<=1
-      for i=1:numel(y)
-        idx_norm = (1:2) + 2*(i-1);
-        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov(:));
+    dnlZs = cell(numel(y),1);
+    for i=1:numel(y)
+      idx_norm = (1:2) + 2*(i-1);
+      hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov(:));
+      if nargout<=1
         [post, nlZs(i)] = feval(inf{:}, hyp_norm, mean, cov_norm, lik, x{i}, y{i});              
-      end
-      nlZ = sum(nlZs);
-      dnlZ = [];          
-    else      
-      dnlZs = cell(numel(y),1);
-      for i=1:numel(y)
-        idx_norm = (1:2) + 2*(i-1);
-        hyp_norm.cov = vertcat(hyp.norm(idx_norm), hyp.cov(:));
+      else
         [post, nlZs(i), dnlZs{i}] = feval(inf{:}, hyp_norm, mean, cov_norm, lik, x{i}, y{i});
       end
-      nlZ = sum(nlZs);
+    end
+    nlZ = sum(nlZs);
+    if nargout<=1
+      dnlZ = [];
+    else
+      dnlZ = hyp;
+      dnlZ.norm = [];
+      dnlZ.cov = zeros(numel(dnlZ.cov),1);
       for i=1:numel(dnlZs)
-        dnlZs{i} = unwrap(dnlZs{i});
+        dnlZ.cov = dnlZ.cov + dnlZs{i}.cov(3:end);
+        dnlZ.norm = vertcat(dnlZ.norm, dnlZs{i}.cov(1:2));
       end
-      dnlZs = horzcat(dnlZs{:});
-      dnlZs_norm = dnlZs(1:2,:);
-      dnlZs_norm = dnlZs_norm(:);
-      dnlZs = sum(dnlZs(3:end,:), 2);
-      dnlZ = rewrap(hyp_struct, dnlZs);
-      dnlZ.norm = dnlZs_norm;
     end
   end
 catch
   msgstr = lasterr;
   if nargin>7, error('Inference method failed [%s]', msgstr); else 
     warning('Inference method failed [%s] .. attempting to continue',msgstr)
-    dnlZ = struct('cov',0*hyp.cov, 'mean',0*hyp.mean, 'lik',0*hyp.lik);
+    % dnlZ = struct('cov',0*hyp.cov, 'mean',0*hyp.mean, 'lik',0*hyp.lik);
+    dnlZ = unwrap(hyp);
+    dnlZ = rewrap(hyp, zeros(size(dnlZ)));
     varargout = {NaN, dnlZ}; return                    % continue with a warning
   end
 end

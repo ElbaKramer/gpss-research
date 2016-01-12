@@ -84,10 +84,10 @@ if ~%(relational)s
     X = double(X);
     y = double(y);
 else
-    ndataset = numel(X)
+    ndataset = numel(X);
     for i=1:ndataset
-        X{i} = double(X{i})
-        y{i} = double(y{i})
+        X{i} = double(X{i});
+        y{i} = double(y{i});
     end
 end
 
@@ -128,10 +128,10 @@ hyp.lik = %(lik_params)s;
 if %(relational)s
     sfs = zeros(1,ndataset);
     sfp = zeros(1,ndataset);
-    for i=1:ndataset
-        sfs(i) = log(mean(y{i}));
-        sfp(i) = log(std(y{i}));
-    end
+    %% for i=1:ndataset
+    %%     sfs(i) = log(mean(y{i}));
+    %%     sfp(i) = log(std(y{i}));
+    %% end
     sfn = vertcat(sfs, sfp);
     hyp.norm = sfn(:);
 else
@@ -143,7 +143,7 @@ inference = %(inference)s;
 if ~%(relational)s
     gpfunc = 'gp_delta';
 else
-    gpfunc = 'gp_rel_v2'
+    gpfunc = 'gp_rel_v2';
 end
 
 %% Optimise on subset
