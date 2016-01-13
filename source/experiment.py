@@ -26,6 +26,8 @@ import cblparallel
 from cblparallel.util import mkstemp_safe
 import job_controller as jc
 import utils.misc
+
+from array import array
  
 def remove_nan_scored_models(scored_kernels, score):    
     not_nan = [k for k in scored_kernels if not np.isnan(ff.GPModel.score(k, criterion=score))] 

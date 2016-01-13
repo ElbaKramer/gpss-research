@@ -74,8 +74,6 @@ temp_figures/
 *.oob
 
 .DS_Store
-examples/*.txt
-examples/*/*
 analyses/time-series/gpss.pdf
 posters/jl-tea/tex/lloyd-tea-2013.pdf
 posters/icml/tex/icml-2013.pdf
