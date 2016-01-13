@@ -1,0 +1,28 @@
+# experiment file setup
+examples/fast_example.py
+
+# changed for using our cluster
+source/cblparallel/pyfear.py
+
+# modified python scripts
+source/demo.py               # just commented out post processing part, this script does experiment specified in 'examples/fast_example.py' file
+source/gpml.py               # modified 'OPTIMIZE_KERNEL_CODE' part for relational version
+                             # 'OptimizerOutput' class to include normalizing parameters
+                             # modified 'load_mat' function to load relational data (in cell array)
+source/experiment.py         # made 'calc_data_shape' function with existing code for later use
+                             # introduced 'relational' input argument for 'jc.evaluate_models' and 'Experiment' class
+source/flexible_function.py  # introduced 'normal' field for 'GPModel' class to store nomalizing parameters
+source/job_controller.py     # modified 'evaluate_models' function to deal with the relational version
+
+# newly introduced gp functions
+source/gpml/ext/gp_delta.m   # the original abcd version to deal with zero noise case (infDelta, likDelta)
+source/gpml/ext/gp_rel_v1.m  # our first version of relational abcd (no scale parameter)
+source/gpml/ext/gp_rel_v2.m  # second version, introduced two scale parameters for each sequence for addition and multiplication.
+
+# see the outputs of following commands
+git diff master..relational -- source/gpml.py
+git diff master..relational -- source/experiment.py
+git diff master..relational -- source/flexible_function.py
+git diff master..relational -- source/job_controller.py
+
+diff -u source/gpml/ext/gp_delta.m source/gpml/ext/gp_rel_v2.m | colordiff | less -RS
