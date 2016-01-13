@@ -655,7 +655,7 @@ class GPModel:
     def __repr__(self):
         # Remember all the various scoring criteria
         return 'GPModel(mean=%s, kernel=%s, likelihood=%s, normal=%s, nll=%s, ndata=%s)' % \
-               (self.mean.__repr__(), self.kernel.__repr__(), self.likelihood.__repr__(), self.normal.__repr__(), self.nll, self.ndata)
+               (self.mean.__repr__(), self.kernel.__repr__(), self.likelihood.__repr__(), self.normal.__repr__().replace('\n',''), self.nll, self.ndata)
 
     def __cmp__(self, other):
         if cmp(self.__class__, other.__class__):
