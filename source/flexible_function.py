@@ -22,6 +22,8 @@ import utils.misc
 from utils.misc import colored, format_if_possible
 from scipy.special import i0 # 0th order Bessel function of the first kind
 
+from array import array
+
 ##############################################
 #                                            #
 #               Base classes                 #
